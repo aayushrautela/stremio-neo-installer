@@ -1,12 +1,12 @@
-name: Build Windows Patcher
+name: Build Windows Installer
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'Windows/**'    # Trigger when installer script is changed
-      - 'target_url'    # Trigger when URL is changed
-  workflow_dispatch:    # Allow manual runs
+      - 'Windows/**'
+      - 'target_url'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -16,14 +16,16 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Setup MSBuild (for CSC)
+      uses: microsoft/setup-msbuild@v1
+
     - name: Install Inno Setup
       run: choco install innosetup
 
-    - name: Read Target URL
-      id: get_url
+    - name: Configure and Compile Launcher
       shell: powershell
       run: |
-        # Read the file from the ROOT of the repo
+        # 1. Read URL from root file
         $url = Get-Content target_url -Raw
         $url = $url.Trim()
         
@@ -31,19 +33,24 @@ jobs:
           Write-Error "Target URL is empty!"
           exit 1
         }
+        Write-Host "Compiling with URL: $url"
 
-        Write-Host "Configuration URL: $url"
-        # Export to GitHub ENV so the next step can see it
-        echo "TARGET_URL=$url" >> $env:GITHUB_ENV
+        # 2. Inject URL into C# Code
+        $CsPath = "Windows/Launcher.cs"
+        $Code = Get-Content $CsPath -Raw
+        $Code = $Code.Replace('REPLACE_ME_URL', $url)
+        Set-Content $CsPath $Code
 
-    - name: Compile Installer
-      # Run ISCC on the file inside the Windows folder
-      # Pass the URL using the /D flag
-      run: iscc /DMyAppURL="${{ env.TARGET_URL }}" Windows/installer.iss
+        # 3. Compile C# to EXE
+        # We output it directly to the Windows folder so Inno Setup can find it
+        csc /target:exe /out:Windows/StremioNeoLauncher.exe /r:Microsoft.CSharp.dll Windows/Launcher.cs
 
-    - name: Upload Artifact
+    - name: Build Installer
+      # Runs Inno Setup on the script
+      run: iscc Windows/installer.iss
+
+    - name: Upload Setup.exe
       uses: actions/upload-artifact@v4
       with:
-        name: StremioNeo-Patcher
-        # Inno Setup creates the output relative to the script
-        path: Windows/build/StremioNeo-Patcher.exe
+        name: StremioNeo-Setup
+        path: Windows/build/StremioNeo-Setup.exe
