@@ -2,16 +2,34 @@
 
 # Configuration
 APP_ID="com.stremio.Stremio"
-TARGET_URL="https://stremio-neo.aayushcodes.eu"
 DEST_DIR="$HOME/.local/share/applications"
 DEST_FILE="$DEST_DIR/$APP_ID.desktop"
+
+# --- DYNAMIC CONFIGURATION ---
+# Fetch the target URL
+REPO_URL_SOURCE="https://raw.githubusercontent.com/aayushrautela/stremio-neo-installer/main/target_url"
+
+echo "Stremio Custom Launch Configuration"
+echo "-----------------------------------"
+echo "Fetching configuration from repository..."
+
+# Fetch URL, trim newlines/spaces
+TARGET_URL=$(curl -s "$REPO_URL_SOURCE" | tr -d '\n' | tr -d '\r')
+
+# Verify a valid URL
+if [[ -z "$TARGET_URL" || "$TARGET_URL" != http* ]]; then
+    echo "[ERROR] Could not fetch a valid URL from repository."
+    echo "Checked: $REPO_URL_SOURCE"
+    echo "Response was: $TARGET_URL"
+    exit 1
+fi
+
+echo "[INFO] Target URL found: $TARGET_URL"
+# -----------------------------
 
 # Locations for the Flatpak export (System vs User install)
 SYSTEM_SOURCE="/var/lib/flatpak/exports/share/applications/$APP_ID.desktop"
 USER_SOURCE="$HOME/.local/share/flatpak/exports/share/applications/$APP_ID.desktop"
-
-echo "Stremio Custom Launch Configuration"
-echo "-----------------------------------"
 
 # 1. Verify Stremio Installation
 if ! command -v flatpak &> /dev/null; then
@@ -55,7 +73,6 @@ else
 fi
 
 # 5. Modify the Exec line
-# We construct the exact Exec line that includes the shell wrapper and the custom URL
 NEW_EXEC="Exec=/usr/bin/flatpak run --branch=beta --arch=x86_64 --command=sh com.stremio.Stremio -c 'stremio --url=\"$TARGET_URL\"'"
 
 sed -i "s|^Exec=.*|$NEW_EXEC|" "$DEST_FILE"
@@ -73,5 +90,6 @@ echo "[INFO] Desktop database updated."
 
 echo "-----------------------------------"
 echo "CONFIGURATION COMPLETE"
+echo "Success! Stremio is now set to launch: $TARGET_URL"
 echo "To ensure the changes take effect, please LOG OUT and LOG BACK IN (desktop environment)."
 echo "-----------------------------------"
