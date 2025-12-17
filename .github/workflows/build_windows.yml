@@ -1,0 +1,49 @@
+name: Build Windows Patcher
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'Windows/**'    # Trigger when installer script is changed
+      - 'target_url'    # Trigger when URL is changed
+  workflow_dispatch:    # Allow manual runs
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install Inno Setup
+      run: choco install innosetup
+
+    - name: Read Target URL
+      id: get_url
+      shell: powershell
+      run: |
+        # Read the file from the ROOT of the repo
+        $url = Get-Content target_url -Raw
+        $url = $url.Trim()
+        
+        if ([string]::IsNullOrWhiteSpace($url)) {
+          Write-Error "Target URL is empty!"
+          exit 1
+        }
+
+        Write-Host "Configuration URL: $url"
+        # Export to GitHub ENV so the next step can see it
+        echo "TARGET_URL=$url" >> $env:GITHUB_ENV
+
+    - name: Compile Installer
+      # Run ISCC on the file inside the Windows folder
+      # Pass the URL using the /D flag
+      run: iscc /DMyAppURL="${{ env.TARGET_URL }}" Windows/installer.iss
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: StremioNeo-Patcher
+        # Inno Setup creates the output relative to the script
+        path: Windows/build/StremioNeo-Patcher.exe
