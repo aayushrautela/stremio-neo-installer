@@ -51,24 +51,24 @@ namespace StremioNeoLauncher
                             {
                                 if (string.IsNullOrWhiteSpace(arguments))
                                 {
-                                    shortcut.Arguments = $"--webui-url=\"{TargetUrl}\"";
+                                    shortcut.Arguments = "--webui-url=\"" + TargetUrl + "\"";
                                 }
                                 else
                                 {
-                                    shortcut.Arguments = $"{arguments} --webui-url=\"{TargetUrl}\"";
+                                    shortcut.Arguments = arguments + " --webui-url=\"" + TargetUrl + "\"";
                                 }
                                 shortcut.Save();
-                                Console.WriteLine($"[FIXED] {Path.GetFileName(path)}");
+                                Console.WriteLine("[FIXED] " + Path.GetFileName(path));
                                 patched = true;
                             }
                             else
                             {
-                                Console.WriteLine($"[OK] {Path.GetFileName(path)}");
+                                Console.WriteLine("[OK] " + Path.GetFileName(path));
                             }
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[SKIP] Could not read {Path.GetFileName(path)}: {ex.Message}");
+                            Console.WriteLine("[SKIP] Could not read " + Path.GetFileName(path) + ": " + ex.Message);
                         }
                     }
                 }
@@ -78,7 +78,7 @@ namespace StremioNeoLauncher
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine("\nLaunching Stremio...");
-                    Process.Start(stremioExePath, $"--webui-url=\"{TargetUrl}\"");
+                    Process.Start(stremioExePath, "--webui-url=\"" + TargetUrl + "\"");
                 }
                 else
                 {
@@ -90,7 +90,7 @@ namespace StremioNeoLauncher
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Critical Error: {ex.Message}");
+                Console.WriteLine("Critical Error: " + ex.Message);
                 Console.ReadLine();
             }
         }
