@@ -51,11 +51,11 @@ namespace StremioNeoLauncher
                             {
                                 if (string.IsNullOrWhiteSpace(arguments))
                                 {
-                                    shortcut.Arguments = $"--url=\"{TargetUrl}\"";
+                                    shortcut.Arguments = $"--webui-url=\"{TargetUrl}\"";
                                 }
                                 else
                                 {
-                                    shortcut.Arguments = $"{arguments} --url=\"{TargetUrl}\"";
+                                    shortcut.Arguments = $"{arguments} --webui-url=\"{TargetUrl}\"";
                                 }
                                 shortcut.Save();
                                 Console.WriteLine($"[FIXED] {Path.GetFileName(path)}");
@@ -78,7 +78,7 @@ namespace StremioNeoLauncher
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine("\nLaunching Stremio...");
-                    Process.Start(stremioExePath, $"--url=\"{TargetUrl}\"");
+                    Process.Start(stremioExePath, $"--webui-url=\"{TargetUrl}\"");
                 }
                 else
                 {

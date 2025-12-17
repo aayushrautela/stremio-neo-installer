@@ -16,34 +16,34 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup MSBuild (for CSC)
-      uses: microsoft/setup-msbuild@v1
-
     - name: Install Inno Setup
       run: choco install innosetup
 
     - name: Configure and Compile Launcher
       shell: powershell
       run: |
-        # 1. Read URL from root file
+        # 1. Read URL from the 'target_url' file in the root
         $url = Get-Content target_url -Raw
         $url = $url.Trim()
         
         if ([string]::IsNullOrWhiteSpace($url)) {
-          Write-Error "Target URL is empty!"
+          Write-Error "Target URL is empty in 'target_url' file!"
           exit 1
         }
         Write-Host "Compiling with URL: $url"
 
-        # 2. Inject URL into C# Code
+        # 2. Inject URL into C# Code (Launcher.cs)
         $CsPath = "Windows/Launcher.cs"
         $Code = Get-Content $CsPath -Raw
+        # This replaces the placeholder text in your C# file with the real URL
         $Code = $Code.Replace('REPLACE_ME_URL', $url)
         Set-Content $CsPath $Code
 
-        # 3. Compile C# to EXE
-        # We output it directly to the Windows folder so Inno Setup can find it
-        csc /target:exe /out:Windows/StremioNeoLauncher.exe /r:Microsoft.CSharp.dll Windows/Launcher.cs
+        # 3. Compile C# to EXE using the built-in Windows Compiler
+        # We use the absolute path to csc.exe to avoid "command not found" errors
+        $CSC = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+        
+        & $CSC /target:exe /out:Windows/StremioNeoLauncher.exe /r:Microsoft.CSharp.dll Windows/Launcher.cs
 
     - name: Build Installer
       # Runs Inno Setup on the script
