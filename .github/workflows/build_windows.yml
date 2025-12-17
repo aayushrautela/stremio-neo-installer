@@ -24,7 +24,8 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: |
         # 1. Read URL from the 'target_url' file in the root
-        $url = Get-Content target_url -Raw
+        $TargetUrlPath = Join-Path $PWD "target_url"
+        $url = Get-Content $TargetUrlPath -Raw
         $url = $url.Trim()
 
         if ([string]::IsNullOrWhiteSpace($url)) {
@@ -34,7 +35,7 @@ jobs:
         Write-Host "Compiling with URL: $url"
 
         # 2. Inject URL into C# Code (Launcher.cs)
-        $CsPath = "Windows/Launcher.cs"
+        $CsPath = Join-Path $PWD "Windows/Launcher.cs"
         $Code = Get-Content $CsPath -Raw
         # This replaces the placeholder text in your C# file with the real URL
         $Code = $Code.Replace('REPLACE_ME_URL', $url)
@@ -44,12 +45,19 @@ jobs:
         # We use the absolute path to csc.exe to avoid "command not found" errors
         $CSC = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
-        & $CSC /target:exe /out:Windows/StremioNeoLauncher.exe /r:Microsoft.CSharp.dll Windows/Launcher.cs
+        # Use absolute paths to avoid path resolution issues
+        $CsFilePath = Join-Path $PWD "Windows/Launcher.cs"
+        $OutputPath = Join-Path $PWD "Windows/StremioNeoLauncher.exe"
+
+        & $CSC /target:exe /out:$OutputPath /r:Microsoft.CSharp.dll $CsFilePath
 
     - name: Build Installer
       # Runs Inno Setup on the script
+      shell: powershell
       working-directory: ${{ github.workspace }}
-      run: iscc Windows/installer.iss
+      run: |
+        $InstallerPath = Join-Path $PWD "Windows/installer.iss"
+        iscc $InstallerPath
 
     - name: Upload Setup.exe
       uses: actions/upload-artifact@v4
